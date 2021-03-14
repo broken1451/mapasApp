@@ -19,7 +19,7 @@ export class FullScreenComponent implements OnInit {
       center:[-70.6337478613707,-33.43797964146549],
       zoom: 16
     });
-    console.log('full screen')
+
   }
 
 }

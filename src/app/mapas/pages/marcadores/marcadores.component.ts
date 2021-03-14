@@ -9,7 +9,8 @@ import * as mapboxgl from 'mapbox-gl';
 
 interface MarkerColor {
   color: string;
-  marker: mapboxgl.Marker;
+  marker?: mapboxgl.Marker;
+  centro?: [number, number];
 }
 
 @Component({
@@ -36,6 +37,8 @@ export class MarcadoresComponent implements OnInit, AfterViewInit {
       zoom: this.zoomLvl,
     });
 
+    this.leerLocalStorage();
+
     // const markerHtml: HTMLElement = document.createElement('div');
     // markerHtml.innerHTML = 'hola mundo';
 
@@ -50,7 +53,7 @@ export class MarcadoresComponent implements OnInit, AfterViewInit {
 
   irMarcador(marcador: MarkerColor) {
     this.mapa.flyTo({
-      center: marcador.marker.getLngLat(),
+      center: marcador.marker!.getLngLat(),
     });
   }
 
@@ -69,15 +72,56 @@ export class MarcadoresComponent implements OnInit, AfterViewInit {
       color,
       marker: newMarker,
     });
+    this.guardarMarkerLocalStorage();
+    newMarker.on('dragend', () => {
+      this.guardarMarkerLocalStorage();
+    });
   }
 
+  guardarMarkerLocalStorage() {
+    const lngLatArr: MarkerColor[] = [];
+    this.marcadores.forEach((marker) => {
+      const color = marker.color;
+      const { lng, lat } = marker.marker!.getLngLat();
 
-
-  guardarMarkerLocalStorage(){
-    // localStorage.setItem()
+      lngLatArr.push({
+        color: color,
+        centro: [lng, lat],
+        // marker:
+      });
+    });
+    console.log(this.marcadores);
+    localStorage.setItem('marcadores', JSON.stringify(lngLatArr));
   }
 
-  leerLocalStorage(){
-    
+  leerLocalStorage() {
+    if (!localStorage.getItem('marcadores')) {
+      return;
+    }
+    const lngLatArr: MarkerColor[] = JSON.parse(
+      localStorage.getItem('marcadores')!
+    );
+    lngLatArr.forEach((marker) => {
+      const newMarker = new mapboxgl.Marker({
+        color: marker.color,
+        draggable: true,
+      })
+        .setLngLat(marker.centro!)
+        .addTo(this.mapa);
+      this.marcadores.push({
+        marker: newMarker,
+        color: marker.color,
+      });
+      newMarker.on('dragend', () => {
+        this.guardarMarkerLocalStorage();
+      });
+    });
+  }
+
+  borrarMarker(i: any) {
+    console.log(this.marcadores[i]);
+    this.marcadores[i].marker?.remove();
+    this.marcadores.splice(i, 1);
+    this.guardarMarkerLocalStorage();
   }
 }
